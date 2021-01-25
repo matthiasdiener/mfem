@@ -50,7 +50,7 @@
          solvers, which must be entries in the "Preconditioner Library",
          and solve the system with each one in turn. -->
     <Parameter name="List of linear solvers" type="list(string)"
-               value="PCG with Auxiliary Space Preconditioner"/>
+               value="PCG with AMGe Preconditioner"/>
 
   </ParameterList>
   <!-- ParameterList "Problem parameters" -->
@@ -58,9 +58,9 @@
   <!-- Define a library of available preconditioners. -->
   <ParameterList name="Preconditioner Library">
 
-    <!-- PCG preconditioned with a multilevel AMGe auxiliary space
-         preconditioner. This is a good solver for an H(div) problem. -->
-    <ParameterList name="PCG with Auxiliary Space Preconditioner">
+    <!-- PCG preconditioned with a multilevel AMGe space preconditioner.
+         This is a good solver for an H(div) problem. -->
+    <ParameterList name="PCG with AMGe Preconditioner">
       <Parameter name="Type" type="string" value="Krylov"/>
       <ParameterList name="Solver Parameters">
         <Parameter name="Solver name" type="string" value="PCG"/>
@@ -72,7 +72,7 @@
       </ParameterList>
       <!-- ParameterList "Solver Parameters" -->
     </ParameterList>
-    <!-- ParameterList "PCG with Auxiliary Space Preconditioner" -->
+    <!-- ParameterList "PCG with AMGe Preconditioner" -->
 
     <!-- PCG preconditioned with AMGe using Gauss-Seidel
          smoothers. This is not suitable for an H(div) problem. -->
@@ -90,9 +90,9 @@
     </ParameterList>
     <!-- ParameterList "PCG with AMGe-GS Preconditioner" -->
 
-    <!-- AMGe using Hiptmair (auxiliary space) smoothing with L1 Gauss-Seidel
-         for the primary and the auxiliary solver for the pre- and
-         post-smoothing steps, with ADS-preconditioned CG for the
+    <!-- AMGe using Hiptmair (auxiliary space) smoothing, with L1 Gauss-Seidel
+         for the primary and the auxiliary solver, for the pre- and
+         post-smoothing steps, while ADS-preconditioned CG is used for the
          coarse-grid solve. -->
     <ParameterList name="AMGe-HIP-GS_2">
       <Parameter name="Type" type="string" value="AMGe"/>
