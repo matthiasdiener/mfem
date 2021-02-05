@@ -44,6 +44,9 @@ protected:
    Array<LinearFormIntegrator*> flfi;
    Array<Array<int>*>           flfi_marker; ///< Entries are not owned.
 
+   /// Set of interior Face Integrators to be applied. 
+   Array<LinearFormIntegrator*> iflfi; 
+
    /// The element ids where the centers of the delta functions lie
    Array<int> dlfi_delta_elem_id;
 
@@ -131,6 +134,8 @@ public:
        internally as a pointer to the given Array<int> object. */
    void AddBdrFaceIntegrator(LinearFormIntegrator *lfi,
                              Array<int> &bdr_attr_marker);
+
+   void AddInteriorFaceIntegrator(LinearFormIntegrator *lfi); 
 
    /** @brief Access all integrators added with AddDomainIntegrator() which are
        not DeltaLFIntegrator%s or they are DeltaLFIntegrator%s with non-delta

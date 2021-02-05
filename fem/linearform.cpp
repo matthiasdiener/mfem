@@ -76,6 +76,11 @@ void LinearForm::AddBdrFaceIntegrator(LinearFormIntegrator *lfi,
    flfi_marker.Append(&bdr_attr_marker);
 }
 
+void LinearForm::AddInteriorFaceIntegrator(LinearFormIntegrator *lfi) 
+{
+   iflfi.Append(lfi); 
+}
+
 void LinearForm::Assemble()
 {
    Array<int> vdofs;
@@ -190,6 +195,31 @@ void LinearForm::Assemble()
                flfi[k] -> AssembleRHSElementVect (*fes->GetFE(tr -> Elem1No),
                                                   *tr, elemvect);
                AddElementVector (vdofs, elemvect);
+            }
+         }
+      }
+   }
+   if (iflfi.Size()) 
+   {
+      FaceElementTransformations *tr; 
+      Mesh *mesh = fes->GetMesh(); 
+      Array<int> vdofs2; 
+      int nfaces = mesh->GetNumFaces(); 
+      for (int i = 0; i < nfaces; i++)
+      {
+         tr = mesh -> GetInteriorFaceTransformations(i); 
+         if (tr != NULL) 
+         {
+            fes -> GetElementVDofs (tr -> Elem1No, vdofs);
+            fes -> GetElementVDofs (tr -> Elem2No, vdofs2);
+            vdofs.Append (vdofs2);
+            for (int k = 0; k < iflfi.Size(); k++) 
+            {
+               iflfi[k] -> AssembleRHSElementVect(*fes -> GetFE(tr->Elem1No), 
+                                                  *fes -> GetFE(tr->Elem2No), 
+                                                  *tr, 
+                                                  elemvect); 
+               AddElementVector(vdofs, elemvect); 
             }
          }
       }
