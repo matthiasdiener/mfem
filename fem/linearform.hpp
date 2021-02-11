@@ -158,7 +158,7 @@ public:
    Array<Array<int>*> *GetFLFI_Marker() { return &flfi_marker; }
 
    /// Assembles the linear form i.e. sums over all domain/bdr integrators.
-   void Assemble();
+   virtual void Assemble();
 
    /// Assembles delta functions of the linear form
    void AssembleDelta();
