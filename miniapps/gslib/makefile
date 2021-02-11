@@ -1,4 +1,4 @@
-# Copyright (c) 2010-2020, Lawrence Livermore National Security, LLC. Produced
+# Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
 # at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 # LICENSE and NOTICE for details. LLNL-CODE-806117.
 #
@@ -22,7 +22,7 @@ MFEM_LIB_FILE = mfem_is_not_built
 -include $(CONFIG_MK)
 
 ifeq ($(MFEM_USE_GSLIB),YES)
-   SEQ_MINIAPPS = findpts field-diff
+   SEQ_MINIAPPS = findpts field-diff field-interp
    PAR_MINIAPPS = pfindpts
 else
    SEQ_MINIAPPS =

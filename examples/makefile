@@ -1,4 +1,4 @@
-# Copyright (c) 2010-2020, Lawrence Livermore National Security, LLC. Produced
+# Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
 # at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 # LICENSE and NOTICE for details. LLNL-CODE-806117.
 #
@@ -33,8 +33,14 @@ else
    EXAMPLES = $(PAR_EXAMPLES) $(SEQ_EXAMPLES)
 endif
 SUBDIRS =
-ifeq ($(MFEM_USE_SUNDIALS),YES)
-   SUBDIRS += sundials
+ifeq ($(MFEM_USE_AMGX),YES)
+   SUBDIRS += amgx
+endif
+ifeq ($(MFEM_USE_GINKGO),YES)
+   SUBDIRS += ginkgo
+endif
+ifeq ($(MFEM_USE_HIOP),YES)
+   SUBDIRS += hiop
 endif
 ifeq ($(MFEM_USE_PETSC),YES)
    SUBDIRS += petsc
@@ -42,11 +48,11 @@ endif
 ifeq ($(MFEM_USE_PUMI),YES)
    SUBDIRS += pumi
 endif
-ifeq ($(MFEM_USE_HIOP),YES)
-   SUBDIRS += hiop
+ifeq ($(MFEM_USE_SUNDIALS),YES)
+   SUBDIRS += sundials
 endif
-ifeq ($(MFEM_USE_GINKGO),YES)
-   SUBDIRS += ginkgo
+ifeq ($(MFEM_USE_SUPERLU),YES)
+   SUBDIRS += superlu
 endif
 
 SUBDIRS_ALL = $(addsuffix /all,$(SUBDIRS))
@@ -114,6 +120,16 @@ ex11p-test-strumpack: ex11p
 	@$(call mfem-test,$<, $(RUN_MPI), STRUMPACK example,--strumpack)
 test-par-YES: ex11p-test-strumpack
 endif
+ifeq ($(MFEM_USE_SUPERLU),YES)
+ex11p-test-superlu: ex11p
+	@$(call mfem-test,$<, $(RUN_MPI), SuperLU_DIST example,--superlu)
+test-par-YES: ex11p-test-superlu
+endif
+ifeq ($(MFEM_USE_MKL_CPARDISO),YES)
+ex11p-test-cpardiso: ex11p
+	@$(call mfem-test,$<, $(RUN_MPI), MKL_CPARDISO example,--cpardiso)
+test-par-YES: ex11p-test-cpardiso
+endif
 
 # Testing: "test" target and mfem-test* variables are defined in config/test.mk
 
@@ -128,7 +144,7 @@ clean-build:
 	rm -rf *.dSYM *.TVD.*breakpoints
 
 clean-exec:
-	@rm -f refined.mesh displaced.mesh mesh.* ex5.mesh
+	@rm -f refined.mesh displaced.mesh mesh.* ex5.mesh ex6p-checkpoint.*
 	@rm -rf Example5* Example9* Example15* Example16* Example23* ParaView
 	@rm -f sphere_refined.* sol.* sol_u.* sol_p.* sol_r.* sol_i.*
 	@rm -f ex9.mesh ex9-mesh.* ex9-init.* ex9-final.*

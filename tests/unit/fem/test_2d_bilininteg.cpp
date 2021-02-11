@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2020, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-806117.
 //
@@ -10,7 +10,7 @@
 // CONTRIBUTING.md for details.
 
 #include "mfem.hpp"
-#include "catch.hpp"
+#include "unit_tests.hpp"
 
 using namespace mfem;
 
@@ -183,7 +183,7 @@ TEST_CASE("2D Bilinear Mass Integrators",
 
       SECTION("Mapping H1 to L2")
       {
-         L2_FECollection    fec_l2(order - 1, dim);
+         L2_FECollection    fec_l2(order, dim);
          FiniteElementSpace fespace_l2(&mesh, &fec_l2);
 
          BilinearForm m_l2(&fespace_l2);
@@ -2768,7 +2768,7 @@ TEST_CASE("2D Bilinear Dot Product Integrators",
       }
       SECTION("Mapping ND to L2")
       {
-         L2_FECollection    fec_l2(order - 1, dim);
+         L2_FECollection    fec_l2(order, dim);
          FiniteElementSpace fespace_l2(&mesh, &fec_l2);
 
          BilinearForm m_l2(&fespace_l2);
@@ -2832,7 +2832,7 @@ TEST_CASE("2D Bilinear Dot Product Integrators",
       }
       SECTION("Mapping RT to L2")
       {
-         L2_FECollection    fec_l2(order - 1, dim);
+         L2_FECollection    fec_l2(order, dim);
          FiniteElementSpace fespace_l2(&mesh, &fec_l2);
 
          BilinearForm m_l2(&fespace_l2);

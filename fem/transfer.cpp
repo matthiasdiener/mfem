@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2020, Lawrence Livermore National Security, LLC. Produced
+// Copyright (c) 2010-2021, Lawrence Livermore National Security, LLC. Produced
 // at the Lawrence Livermore National Laboratory. All Rights reserved. See files
 // LICENSE and NOTICE for details. LLNL-CODE-806117.
 //
@@ -520,7 +520,9 @@ void TensorProductPRefinementTransferOperator::MultTranspose(const Vector& x,
 TrueTransferOperator::TrueTransferOperator(const
                                            ParFiniteElementSpace& lFESpace_,
                                            const ParFiniteElementSpace& hFESpace_)
-   : lFESpace(lFESpace_), hFESpace(hFESpace_)
+   : Operator(hFESpace_.GetTrueVSize(), lFESpace_.GetTrueVSize()),
+     lFESpace(lFESpace_),
+     hFESpace(hFESpace_)
 {
    localTransferOperator = new TransferOperator(lFESpace_, hFESpace_);
 
