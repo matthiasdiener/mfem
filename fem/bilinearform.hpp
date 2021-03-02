@@ -656,6 +656,13 @@ protected:
    Array<BilinearFormIntegrator*> btfbfi;
    Array<Array<int>*>             btfbfi_marker;///< Entries are not owned.
 
+   // face integrators for vector DG spaces 
+   Array<BilinearFormIntegrator*> fbfi; 
+
+   // boundary face integrators for vector DG spaces
+   Array<BilinearFormIntegrator*> bfbfi; 
+   Array<Array<int>*> bfbfi_marker; 
+
    DenseMatrix elemmat;
    Array<int>  trial_vdofs, test_vdofs;
 
@@ -746,6 +753,11 @@ public:
    /// Adds a boundary trace face integrator. Assumes ownership of @a bfi.
    void AddBdrTraceFaceIntegrator (BilinearFormIntegrator * bfi,
                                    Array<int> &bdr_marker);
+
+   void AddInteriorFaceIntegrator(BilinearFormIntegrator *bfi); 
+   void AddBdrFaceIntegrator(BilinearFormIntegrator *bfi); 
+   void AddBdrFaceIntegrator(BilinearFormIntegrator *bfi, 
+                              Array<int> &bdr_marker); 
 
    /// Access all integrators added with AddDomainIntegrator().
    Array<BilinearFormIntegrator*> *GetDBFI() { return &dbfi; }
