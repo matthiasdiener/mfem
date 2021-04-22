@@ -476,8 +476,8 @@ void rhsfunc(const Vector &p, Vector &f)
 {
    const int dim = p.Size();
 
-   f(0) = 0.0;
-   f(1) = 0.0;
+   f(0) = 1.0;
+   f(1) = 1.0;
    if (dim == 3)
    {
       f(2) = 1.0;

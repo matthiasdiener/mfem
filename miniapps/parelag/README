@@ -107,11 +107,11 @@ example, as follows:
 The miniapps can be executed in parallel, e.g., using mpirun.
 
 Note that the examples in their current form are limited to 3D meshes and
-problem.
+problems.
 
 The examples assume zero boundary conditions, where the boundary attributes for
 essential boundary conditions are provided in the parameters .xml files. For
-more sophisticated boundary conditions, the sourcefiles of the miniapps need to
+more sophisticated boundary conditions, the source files of the miniapps need to
 be modified.
 
 The examples allow piecewise constant coefficients in areas of the domain
@@ -127,11 +127,15 @@ References
 ParElag: Parallel Element Agglomeration Algebraic Multigrid Upscaling and
  Solvers, http://github.com/LLNL/parelag
 
-T. V Kolev and P. S. Vassilevski, “Parallel Auxiliary Space AMG for H(curl)
+D. Z. Kalchev, P. S. Vassilevski, and U. Villa, “Parallel Element-based
+ Algebraic Multigrid for H(curl) and H(div) Problems Using the ParELAG
+ Library,” 2021
+
+T. V. Kolev and P. S. Vassilevski, “Parallel Auxiliary Space AMG for H(curl)
  Problems,” Journal of Computational Mathematics, vol. 27, no. 5, pp. 604–623,
  2009, http://doi.org/10.4208/jcm.2009.27.5.013
 
-T. V Kolev and P. S. Vassilevski, “Parallel Auxiliary Space AMG Solver for
+T. V. Kolev and P. S. Vassilevski, “Parallel Auxiliary Space AMG Solver for
  H(div) Problems,” SIAM Journal on Scientific Computing, vol. 34, no. 6,
  pp. A3079–A3098, 2012, http://doi.org/10.1137/110859361
 
