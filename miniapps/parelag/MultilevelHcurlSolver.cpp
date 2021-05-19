@@ -37,6 +37,9 @@ int main(int argc, char *argv[])
    MPI_Comm_size(comm, &num_ranks);
    MPI_Comm_rank(comm, &myid);
 
+   Timer total_timer = TimeManager::AddTimer("Program Execution -- Total");
+   Timer init_timer = TimeManager::AddTimer("Initial Setup");
+
    if (!myid)
       cout << "-- This is an example of using a geometric-like multilevel "
               "hierarchy, constructed by ParElag,\n"
@@ -44,10 +47,13 @@ int main(int argc, char *argv[])
               "(alpha curl u, curl v) + (beta u, v).\n\n";
 
    // Get basic parameters from command line.
-   const char *xml_file_c = "";
+   const char *xml_file_c = "MultilevelHcurlSolver_example_parameters.xml";
+   bool visualize = false;
    OptionsParser args(argc, argv);
    args.AddOption(&xml_file_c, "-f", "--xml-file",
                   "XML parameter list (an XML file with detailed parameters).");
+   args.AddOption(&visualize, "-v", "--visualize", "-nv", "--no-visualize",
+                  "Use GLVis to visualize the final solution.");
    args.Parse();
    if (!args.Good())
    {
@@ -128,7 +134,10 @@ int main(int argc, char *argv[])
    shared_ptr<ParMesh> pmesh;
    {
       if (!myid)
+      {
          cout << "\nReading and refining serial mesh...\n";
+         cout << "Times to refine mesh in serial: " << ser_ref_levels << ".\n";
+      }
 
       ifstream imesh(meshfile);
       if (!imesh)
@@ -142,19 +151,29 @@ int main(int argc, char *argv[])
       imesh.close();
 
       for (int l = 0; l < ser_ref_levels; ++l)
+      {
+         if (!myid)
+            cout << "Serially refining mesh: " << l+1 << "...\n";
          mesh->UniformRefinement();
+      }
 
       if (ser_ref_levels < 0)
       {
          ser_ref_levels = 0;
          for (; mesh->GetNE() < 6 * num_ranks; ++ser_ref_levels)
+         {
+            if (!myid)
+               cout << "Serially refining mesh: " << ser_ref_levels+1 << "...\n";
             mesh->UniformRefinement();
+         }
       }
 
       if (!myid)
       {
          cout << "Times refined mesh in serial: " << ser_ref_levels << ".\n";
          cout << "Building and refining parallel mesh...\n";
+         cout << "Times to refine mesh in parallel: " << par_ref_levels
+              << ".\n";
          mesh_msg << "*    Serial refinements: " << ser_ref_levels << '\n'
                   << "*      Coarse mesh size: " << mesh->GetNE() << "\n*\n";
       }
@@ -219,6 +238,8 @@ int main(int argc, char *argv[])
    vector<int> level_nElements(nLevels);
    for (int l = 0; l < par_ref_levels; ++l)
    {
+      if (!myid)
+         cout << "Parallelly refining mesh: " << l+1 << "...\n";
       level_nElements[par_ref_levels - l] = pmesh->GetNE();
       pmesh->UniformRefinement();
    }
@@ -243,8 +264,11 @@ int main(int argc, char *argv[])
    if (!myid)
       cout << mesh_msg.str();
    pmesh->ReorientTetMesh();
+   init_timer.Stop();
 
    // Obtain the hierarchy of agglomerate topologies.
+   Timer agg_timer = TimeManager::AddTimer("Mesh Agglomeration -- Total");
+   Timer agg0_timer = TimeManager::AddTimer("Mesh Agglomeration -- Level 0");
    if (!myid)
       cout << "Agglomerating topology for " << nLevels-1
            << " coarse levels...\n";
@@ -256,18 +280,31 @@ int main(int argc, char *argv[])
    MFEMRefinedMeshPartitioner partitioner(nDimensions);
    vector<shared_ptr<AgglomeratedTopology>> topology(nLevels);
 
+   if (!myid)
+      cout << "Agglomerating level: 0...\n";
    topology[0] = make_shared<AgglomeratedTopology>(pmesh, nDimensions);
+   agg0_timer.Stop();
    for(int l = 0; l < nLevels - 1; ++l)
    {
+      Timer aggl_timer = TimeManager::AddTimer(std::string("Mesh "
+                                               "Agglomeration -- Level ").
+                                               append(std::to_string(l+1)));
       Array<int> partitioning(topology[l]->GetNumberLocalEntities(AT_elem));
       partitioner.Partition(topology[l]->GetNumberLocalEntities(AT_elem),
                             level_nElements[l + 1], partitioning);
+      if (!myid)
+         cout << "Agglomerating level: " << l+1 << "...\n";
       topology[l + 1] = topology[l]->CoarsenLocalPartitioning(partitioning,
                                                               false, false);
    }
+   agg_timer.Stop();
 
    // Construct the hierarchy of spaces, thus forming a hierarchy of (partial)
    // de Rham sequences.
+   Timer derham_timer = TimeManager::AddTimer("DeRhamSequence Construction -- "
+                                              "Total");
+   Timer derham0_timer = TimeManager::AddTimer("DeRhamSequence Construction -- "
+                                               "Level 0");
    if (!myid)
       cout << "Building the fine-level de Rham sequence...\n";
 
@@ -276,7 +313,7 @@ int main(int argc, char *argv[])
    const int jform = 1; // This is the H(curl) form.
    if(nDimensions == 3)
       sequence[0] = make_shared<DeRhamSequence3D_FE>(topology[0], pmesh.get(),
-                                                     feorder);
+                                                     feorder, true, false);
    else
       MFEM_ABORT("No H(curl) 2D interpretation of form 1 is implemented.");
 
@@ -303,17 +340,25 @@ int main(int argc, char *argv[])
       cout << "Interpolating and setting polynomial targets...\n";
 
    DRSequence_FE->SetUpscalingTargets(nDimensions, upscalingOrder);
+   derham0_timer.Stop();
 
    if (!myid)
       cout << "Building the coarse-level de Rham sequences...\n";
 
    for(int l = 0; l < nLevels - 1; ++l)
    {
+      Timer derhaml_timer = TimeManager::AddTimer(std::string("DeRhamSequence "
+                                               "Construction -- Level ").
+                                               append(std::to_string(l+1)));
+      if (!myid)
+         cout << "Building the level " << l+1 << " de Rham sequences...\n";
       const double tolSVD = 1e-9;
       sequence[l]->SetSVDTol(tolSVD);
       sequence[l + 1] = sequence[l]->Coarsen();
    }
+   derham_timer.Stop();
 
+   Timer assemble_timer = TimeManager::AddTimer("Fine Matrix Assembly");
    if (!myid)
       cout << "Assembling the fine-level system...\n";
 
@@ -382,8 +427,10 @@ int main(int argc, char *argv[])
            << A->GetGlobalNumCols() << '\n' << " A NNZ: " << A->NNZ() << '\n';
    MFEM_ASSERT(B.Size() == A->Height(),
                "Matrix and vector size are incompatible.");
+   assemble_timer.Stop();
 
    // Perform the solves.
+   Timer solvers_timer = TimeManager::AddTimer("Solvers -- Total");
    if (!myid)
       cout << "\nRunning fine-level solvers...\n\n";
 
@@ -394,6 +441,9 @@ int main(int argc, char *argv[])
    // Loop through the solvers.
    for (const auto& solver_name : list_of_solvers)
    {
+      Timer solver_timer = TimeManager::AddTimer(std::string("Solver \"").
+                                                 append(solver_name).
+                                                 append("\" -- Total"));
       // Get the solver factory.
       auto solver_factory = lib->GetSolverFactory(solver_name);
       auto solver_state = solver_factory->GetDefaultState();
@@ -402,11 +452,18 @@ int main(int argc, char *argv[])
       solver_state->SetForms({jform});
 
       // Build the silver.
+      Timer build_timer = TimeManager::AddTimer(std::string("Solver \"").
+                                                append(solver_name).
+                                                append("\" -- Build"));
       if (!myid)
          cout << "Building solver \"" << solver_name << "\"...\n";
       unique_ptr<Solver> solver = solver_factory->BuildSolver(A, *solver_state);
+      build_timer.Stop();
 
       // Run the solver.
+      Timer pre_timer = TimeManager::AddTimer(std::string("Solver \"").
+                                              append(solver_name).
+                                              append("\" -- Pre-solve"));
       if (!myid)
          cout << "Solving system with \"" << solver_name << "\"...\n";
 
@@ -428,10 +485,18 @@ int main(int argc, char *argv[])
          if (!myid)
             cout << "Initial residual l2 norm: " << sqrt(global_norm) << '\n';
       }
+      pre_timer.Stop();
 
       // Perform the solve.
+      Timer solve_timer = TimeManager::AddTimer(std::string("Solver \"").
+                                                append(solver_name).
+                                                append("\" -- Solve"));
       solver->Mult(B, X);
+      solve_timer.Stop();
 
+      Timer post_timer = TimeManager::AddTimer(std::string("Solver \"").
+                                               append(solver_name).
+                                               append("\" -- Post-solve"));
       {
          Vector tmp(A->Height());
          A->Mult(X, tmp);
@@ -450,10 +515,18 @@ int main(int argc, char *argv[])
          cout << "Solver \"" << solver_name << "\" finished.\n";
 
       // Visualize the solution.
-      hcurl_dofTrueDof.Distribute(X, x);
-      MultiVector tmp(x.GetData(), 1, x.Size());
-      sequence[0]->show(jform, tmp);
+      if (visualize)
+      {
+         hcurl_dofTrueDof.Distribute(X, x);
+         MultiVector tmp(x.GetData(), 1, x.Size());
+         sequence[0]->show(jform, tmp);
+      }
+      post_timer.Stop();
    }
+   solvers_timer.Stop();
+
+   total_timer.Stop();
+   TimeManager::Print();
 
    if (!myid)
       cout << "\nFinished.\n";
