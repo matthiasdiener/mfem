@@ -294,7 +294,7 @@ int main(int argc, char *argv[])
       if (!myid)
          cout << "Agglomerating level: " << l+1 << "...\n";
       topology[l + 1] = topology[l]->CoarsenLocalPartitioning(partitioning,
-                                                              false, false);
+                                                              false, false, 2);
    }
    agg_timer.Stop();
 
@@ -331,6 +331,11 @@ int main(int argc, char *argv[])
    DeRhamSequenceFE *DRSequence_FE = sequence[0]->FemSequence();
    MFEM_ASSERT(DRSequence_FE,
                "Failed to obtain the fine-level de Rham sequence.");
+
+   if (!myid)
+      cout << "Setting coefficients and computing fine-level local "
+           << "matrices...\n";
+
    DRSequence_FE->ReplaceMassIntegrator(AT_elem, jform,
                      make_unique<VectorFEMassIntegrator>(beta), false);
    DRSequence_FE->ReplaceMassIntegrator(AT_elem, jform + 1,
