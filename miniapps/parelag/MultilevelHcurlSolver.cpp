@@ -53,7 +53,8 @@ int main(int argc, char *argv[])
    args.AddOption(&xml_file_c, "-f", "--xml-file",
                   "XML parameter list (an XML file with detailed parameters).");
    args.AddOption(&visualize, "-v", "--visualize", "-nv", "--no-visualize",
-                  "Use GLVis to visualize the final solution.");
+                  "Use GLVis to visualize the final solution and the "
+                  "agglomerates.");
    args.Parse();
    if (!args.Good())
    {
@@ -299,6 +300,10 @@ int main(int argc, char *argv[])
    }
    agg_timer.Stop();
 
+   if (visualize && nDimensions <= 3)
+      for (int l = 1; l < nLevels; ++l)
+         ShowTopologyAgglomeratedElements(topology[l].get(), pmesh.get());
+
    // Construct the hierarchy of spaces, thus forming a hierarchy of (partial)
    // de Rham sequences.
    Timer derham_timer = TimeManager::AddTimer("DeRhamSequence Construction -- "
@@ -357,7 +362,7 @@ int main(int argc, char *argv[])
                                                append(std::to_string(l+1)));
       if (!myid)
          cout << "Building the level " << l+1 << " de Rham sequences...\n";
-      const double tolSVD = 1e-9;
+      const double tolSVD = 1e-3;
       sequence[l]->SetSVDTol(tolSVD);
       sequence[l + 1] = sequence[l]->Coarsen();
    }
