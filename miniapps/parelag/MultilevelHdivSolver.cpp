@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
       for (int l = 0; l < ser_ref_levels; ++l)
       {
          if (!myid)
-            cout << "Serially refining mesh: " << l+1 << "...\n";
+            cout << "Serially refining mesh: " << l + 1 << "...\n";
          mesh->UniformRefinement();
       }
 
@@ -164,7 +164,8 @@ int main(int argc, char *argv[])
          for (; mesh->GetNE() < 6 * num_ranks; ++ser_ref_levels)
          {
             if (!myid)
-               cout << "Serially refining mesh: " << ser_ref_levels+1 << "...\n";
+               cout << "Serially refining mesh: " << ser_ref_levels + 1
+                    << "...\n";
             mesh->UniformRefinement();
          }
       }
@@ -239,7 +240,7 @@ int main(int argc, char *argv[])
    for (int l = 0; l < par_ref_levels; ++l)
    {
       if (!myid)
-         cout << "Parallelly refining mesh: " << l+1 << "...\n";
+         cout << "Parallelly refining mesh: " << l + 1 << "...\n";
       level_nElements[par_ref_levels - l] = pmesh->GetNE();
       pmesh->UniformRefinement();
    }
@@ -270,7 +271,7 @@ int main(int argc, char *argv[])
    Timer agg_timer = TimeManager::AddTimer("Mesh Agglomeration -- Total");
    Timer agg0_timer = TimeManager::AddTimer("Mesh Agglomeration -- Level 0");
    if (!myid)
-      cout << "Agglomerating topology for " << nLevels-1
+      cout << "Agglomerating topology for " << nLevels - 1
            << " coarse levels...\n";
 
    constexpr auto AT_elem = AgglomeratedTopology::ELEMENT;
@@ -282,8 +283,22 @@ int main(int argc, char *argv[])
 
    if (!myid)
       cout << "Agglomerating level: 0...\n";
+
    topology[0] = make_shared<AgglomeratedTopology>(pmesh, nDimensions);
+
+   if (!myid)
+   {
+      cout << "Level 0 global number of mesh entities: "
+           << topology[0]->
+           GetNumberGlobalTrueEntities((AgglomeratedTopology::Entity)0);
+      for (int j = 1; j <= nDimensions; ++j)
+         cout << ", " << topology[0]->
+              GetNumberGlobalTrueEntities((AgglomeratedTopology::Entity)j);
+      cout << endl;
+   }
+
    agg0_timer.Stop();
+
    for(int l = 0; l < nLevels - 1; ++l)
    {
       Timer aggl_timer = TimeManager::AddTimer(std::string("Mesh "
@@ -292,11 +307,24 @@ int main(int argc, char *argv[])
       Array<int> partitioning(topology[l]->GetNumberLocalEntities(AT_elem));
       partitioner.Partition(topology[l]->GetNumberLocalEntities(AT_elem),
                             level_nElements[l + 1], partitioning);
+
       if (!myid)
-         cout << "Agglomerating level: " << l+1 << "...\n";
+         cout << "Agglomerating level: " << l + 1 << "...\n";
+
       topology[l + 1] = topology[l]->CoarsenLocalPartitioning(partitioning,
                                                               false, false, 2);
+      if (!myid)
+      {
+         cout << "Level " << l + 1 << " global number of mesh entities: "
+              << topology[l + 1]->
+              GetNumberGlobalTrueEntities((AgglomeratedTopology::Entity)0);
+         for (int j = 1; j <= nDimensions; ++j)
+            cout << ", " << topology[l + 1]->
+                 GetNumberGlobalTrueEntities((AgglomeratedTopology::Entity)j);
+         cout << endl;
+      }
    }
+
    agg_timer.Stop();
 
    if (visualize && nDimensions <= 3)
@@ -338,6 +366,17 @@ int main(int argc, char *argv[])
                "Failed to obtain the fine-level de Rham sequence.");
 
    if (!myid)
+   {
+      cout << "Level 0 global number of dofs: "
+           << DRSequence_FE->GetDofHandler(0)->GetDofTrueDof().
+                 GetTrueGlobalSize();
+      for (int j = 1; j <= nDimensions; ++j)
+         cout << ", " << DRSequence_FE->GetDofHandler(j)->GetDofTrueDof().
+                            GetTrueGlobalSize();
+      cout << endl;
+   }
+
+   if (!myid)
       cout << "Setting coefficients and computing fine-level local "
            << "matrices...\n";
 
@@ -361,10 +400,23 @@ int main(int argc, char *argv[])
                                                "Construction -- Level ").
                                                append(std::to_string(l+1)));
       if (!myid)
-         cout << "Building the level " << l+1 << " de Rham sequences...\n";
+         cout << "Building the level " << l + 1 << " de Rham sequences...\n";
+
       const double tolSVD = 1e-3;
       sequence[l]->SetSVDTol(tolSVD);
       sequence[l + 1] = sequence[l]->Coarsen();
+
+      if (!myid)
+      {
+         auto DRSequence = sequence[l + 1];
+         cout << "Level " << l + 1 << " global number of dofs: "
+              << DRSequence->GetDofHandler(0)->GetDofTrueDof().
+                    GetTrueGlobalSize();
+         for (int j = 1; j <= nDimensions; ++j)
+            cout << ", " << DRSequence->GetDofHandler(j)->GetDofTrueDof().
+                               GetTrueGlobalSize();
+         cout << endl;
+      }
    }
    derham_timer.Stop();
 
