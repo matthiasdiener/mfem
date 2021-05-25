@@ -146,7 +146,7 @@
         <Parameter name="Solver name" type="string" value="PCG"/>
         <Parameter name="Preconditioner" type="string" value="ADS"/>
         <Parameter name="Print level" type="int" value="-1"/>
-        <Parameter name="Maximum iterations" type="int" value="100"/>
+        <Parameter name="Maximum iterations" type="int" value="5"/>
         <Parameter name="Relative tolerance" type="double" value="1e-6"/>
         <Parameter name="Absolute tolerance" type="double" value="1e-8"/>
       </ParameterList>
