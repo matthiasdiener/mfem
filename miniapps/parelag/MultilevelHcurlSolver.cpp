@@ -90,8 +90,13 @@ int main(int argc, char *argv[])
    int ser_ref_levels = prob_list.Get("Serial refinement levels", -1);
 
    // The number of times to refine in parallel. This determines the
-   // number of levels in the AMGe hierarchy.
+   // number of levels in the AMGe hierarchy, if amge_levels is set to 0.
    const int par_ref_levels = prob_list.Get("Parallel refinement levels", 2);
+
+   // Number of levels in the AMGe hierarchy. Should not be larger than
+   // par_ref_levels + 1. If set to 0, it will be interpreted as equal to
+   // par_ref_levels + 1.
+   const int amge_levels = prob_list.Get("AMGe levels", 0);
 
    // The order of the finite elements on the finest level.
    const int feorder = prob_list.Get("Finite element order", 0);
@@ -236,13 +241,20 @@ int main(int argc, char *argv[])
    // H(div) interpretation of form 1.
    MFEM_ASSERT(nDimensions == 3, "Only 3D problems are supported.");
 
-   const int nLevels = par_ref_levels + 1;
+   const int nLevels = amge_levels <= 0 ? par_ref_levels + 1 : amge_levels;
+   MFEM_ASSERT(nLevels <= par_ref_levels + 1,
+               "Number of AMGe levels too high relative to parallel"
+               " refinements.");
    vector<int> level_nElements(nLevels);
    for (int l = 0; l < par_ref_levels; ++l)
    {
       if (!myid)
-         cout << "Parallelly refining mesh: " << l + 1 << "...\n";
-      level_nElements[par_ref_levels - l] = pmesh->GetNE();
+         cout << "Parallelly refining mesh: " << l + 1
+              << (par_ref_levels - l > nLevels ? " (not in hierarchy)"
+                                                : " (in hierarchy)")
+              << "...\n";
+      if (par_ref_levels - l < nLevels)
+         level_nElements[par_ref_levels - l] = pmesh->GetNE();
       pmesh->UniformRefinement();
    }
    level_nElements[0] = pmesh->GetNE();

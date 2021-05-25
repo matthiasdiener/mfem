@@ -17,13 +17,19 @@
          minimum amount of times to probably get a good parallel
          distribution (until the number of elements is 6 times
          the number of processes). -->
-    <Parameter name="Serial refinement levels" type="int" value="-1"/>
+    <Parameter name="Serial refinement levels" type="int" value="0"/>
 
     <!-- Number of times to refine in parallel. This determines the
-         number of levels in the AMGe hierarchy. -->
-    <Parameter name="Parallel refinement levels" type="int" value="3"/>
+         number of levels in the AMGe hierarchy, if "AMGe levels" is set to
+         0. -->
+    <Parameter name="Parallel refinement levels" type="int" value="2"/>
 
-    <!-- The order of the H(div) and L2 finite element spaces. -->
+    <!-- Number of levels in the AMGe hierarchy. Should not be larger than
+         "Parallel refinement levels" + 1. If set to 0, it will be interpreted
+         as equal to "Parallel refinement levels" + 1. -->
+    <Parameter name="AMGe levels" type="int" value="3"/>
+
+    <!-- The order of the finite elements on the finest level. -->
     <Parameter name="Finite element order" type="int" value="0"/>
 
     <!-- Order of polynomials to include in the upscaled spaces. -->
